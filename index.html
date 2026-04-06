@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Artemis II — Mission Control Dashboard</title>
+<meta name="description" content="Real-time mission control dashboard for NASA's Artemis II lunar flyby. Live telemetry, trajectory visualization, DSN contacts, space weather, and crew tracking. Public good project by Dawn Solari.">
+<meta name="author" content="Dawn Solari">
+<meta name="keywords" content="Artemis II, NASA, mission control, live telemetry, lunar flyby, Orion, SLS, space, dashboard">
+<link rel="canonical" href="https://solari-dawn.github.io/artemis2/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://solari-dawn.github.io/artemis2/">
+<meta property="og:title" content="Artemis II — Mission Control Dashboard">
+<meta property="og:description" content="Real-time mission control dashboard for NASA's Artemis II lunar flyby. Live telemetry, trajectory, DSN, space weather — public good, no ads.">
+<meta property="og:image" content="https://solari-dawn.github.io/artemis2/preview.png">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Artemis II — Mission Control Dashboard">
+<meta name="twitter:description" content="Real-time mission control dashboard for NASA's Artemis II lunar flyby. Public good project — no ads, no tracking.">
+<meta name="twitter:image" content="https://solari-dawn.github.io/artemis2/preview.png">
+<script src="scripts/youtubePlayer.js"></script>
 <style>
   :root {
     --bg: #080c14;
@@ -66,8 +84,7 @@
   /* ── Grid ── */
   #grid {
     display: grid;
-    grid-template-columns: 260px 1fr 260px;
-    grid-template-rows: auto auto auto;
+    grid-template-columns: 1fr 2fr 1fr;
     gap: 8px;
     padding: 8px;
     max-width: 1600px;
@@ -114,7 +131,6 @@
   .tele-unit { font-size: 9px; color: var(--dim); margin-left: 3px; }
 
   /* ── Orbit Canvas ── */
-  #orbit-panel { grid-column: 2; grid-row: 1 / 3; }
   #orbitCanvas { display: block; width: 100%; }
 
   /* ── Attitude ── */
@@ -195,7 +211,7 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   /* ── Overlay panels ── */
-  #bottom-row { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  #bottom-row { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
   /* ── Source tags ── */
   .src-tag { font-size: 8px; color: var(--dim); float: right; }
@@ -203,21 +219,71 @@
   /* ── Loading ── */
   .loading { color: var(--dim); font-size: 10px; padding: 10px 0; text-align: center; }
 
+  /* ── Public good banner ── */
+  #public-good-banner {
+    background: rgba(79,136,255,0.08);
+    border-bottom: 1px solid rgba(0,170,255,0.25);
+    padding: 7px 16px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--dim);
+  }
+  #public-good-banner strong { color: var(--accent3); }
+  #public-good-banner .eth-addr {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    color: var(--accent);
+    background: rgba(0,170,255,0.1);
+    border: 1px solid rgba(0,170,255,0.3);
+    border-radius: 3px;
+    padding: 1px 7px;
+    margin-left: 4px;
+    letter-spacing: 1px;
+    font-size: 11px;
+    user-select: all;
+    cursor: pointer;
+  }
+  #public-good-banner .eth-addr:hover { background: rgba(0,170,255,0.18); }
+
+  /* ── Footer ── */
+  #site-footer {
+    text-align: center;
+    padding: 14px 16px 18px;
+    font-size: 10px;
+    color: var(--dim);
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  #site-footer .eth-addr {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    color: var(--accent);
+    background: rgba(0,170,255,0.08);
+    border: 1px solid rgba(0,170,255,0.25);
+    border-radius: 3px;
+    padding: 1px 7px;
+    margin-left: 4px;
+    user-select: all;
+    cursor: pointer;
+  }
+  #site-footer .eth-addr:hover { background: rgba(0,170,255,0.18); }
+
   /* ── Responsive ── */
   @media (max-width: 900px) {
     #grid { grid-template-columns: 1fr; }
-    #orbit-panel { grid-column: 1; grid-row: auto; }
-    #bottom-row { grid-template-columns: 1fr 1fr; }
     #header h1 { font-size: 11px; }
     #mission-clock { font-size: 16px; }
   }
-  @media (max-width: 500px) {
-    #bottom-row { grid-template-columns: 1fr; }
-  }
 
-  /* NASA YouTube embed */
-  #yt-wrap { position: relative; width: 100%; padding-top: 56.25%; }
-  #yt-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 3px; }
+  /* ── Video panel ── */
+  #yt-player-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #000;
+  }
 
   .arow-link {
     display: block; text-align: center; padding: 8px;
@@ -255,6 +321,13 @@
     <div id="status-badge">● MISSION ACTIVE</div>
     <div style="font-size:9px;color:var(--dim);margin-top:4px" id="utc-clock">UTC —</div>
   </div>
+</div>
+
+<!-- PUBLIC GOOD BANNER -->
+<div id="public-good-banner">
+  <strong>Public good project</strong> &mdash; no ads, no tracking, no monetization layer.
+  If it&rsquo;s useful, ETH donations are welcome:
+  <span class="eth-addr" title="Click to copy">solari-dawn.eth</span>
 </div>
 
 <!-- MAIN GRID -->
@@ -362,39 +435,6 @@
     <div class="panel" style="overflow-y:auto;max-height:280px;">
       <div class="panel-title"><span class="dot" style="background:var(--accent2)"></span> MISSION TIMELINE</div>
       <div id="timeline-list"><div class="loading">Loading timeline…</div></div>
-    </div>
-
-    <!-- Live stream -->
-    <div class="panel">
-      <div class="panel-title"><span class="dot" style="background:var(--danger);animation:pulse 1s infinite"></span> LIVE COVERAGE <span class="src-tag">NASA+·YT</span></div>
-      <div id="yt-wrap" style="position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:3px;overflow:hidden;">
-        <iframe
-          id="yt-iframe"
-          style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
-          src="https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1&rel=0"
-          allow="autoplay; encrypted-media; picture-in-picture"
-          allowfullscreen
-          title="NASA Artemis II Live">
-        </iframe>
-        <!-- Fallback overlay shown if iframe fails -->
-        <div id="yt-fallback" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#0d1525;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
-          <div style="font-size:28px">📡</div>
-          <div style="font-size:11px;color:var(--accent);letter-spacing:1px;">NASA LIVE COVERAGE</div>
-          <div style="font-size:9px;color:var(--dim);text-align:center;padding:0 16px;">YouTube embedding may be restricted in this preview environment. Click below to open on your site or directly.</div>
-          <a href="https://www.youtube.com/watch?v=21X5lGlDOfg" target="_blank" rel="noopener"
-             style="padding:8px 18px;background:rgba(0,170,255,0.15);border:1px solid var(--accent);color:var(--accent);border-radius:3px;font-size:10px;text-decoration:none;letter-spacing:1px;">
-            ▶ WATCH ON YOUTUBE
-          </a>
-          <a href="https://plus.nasa.gov" target="_blank" rel="noopener"
-             style="padding:6px 14px;background:rgba(255,102,0,0.1);border:1px solid var(--accent2);color:var(--accent2);border-radius:3px;font-size:10px;text-decoration:none;letter-spacing:1px;">
-            ▶ WATCH ON NASA+
-          </a>
-        </div>
-      </div>
-      <div style="font-size:9px;color:var(--dim);margin-top:6px;display:flex;justify-content:space-between;">
-        <span>NASA YouTube · 24/7 Artemis II</span>
-        <a href="https://www.youtube.com/watch?v=21X5lGlDOfg" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">↗ Open full</a>
-      </div>
     </div>
 
     <!-- News Feed -->
@@ -892,6 +932,32 @@ function updatePhase() {
 }
 setInterval(updatePhase, 10000);
 updatePhase();
+
+// ═══════════════════════════════════════════════
+// YOUTUBE PLAYER — custom player (scripts/youtubePlayer.js)
+// ═══════════════════════════════════════════════
+youtubePlayer(
+  'https://www.youtube.com/watch?v=m3kR2KK8TEs',
+  document.getElementById('yt-player-container')
+);
+
+// Copy ETH address on click
+document.querySelectorAll('.eth-addr').forEach(el => {
+  el.addEventListener('click', () => {
+    navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+      const orig = el.textContent;
+      el.textContent = 'copied!';
+      setTimeout(() => { el.textContent = orig; }, 1400);
+    }).catch(() => {});
+  });
+});
 </script>
+
+<!-- FOOTER -->
+<footer id="site-footer">
+  Public good project &mdash; no ads, no tracking, no monetization layer.
+  If it&rsquo;s useful, ETH donations are welcome:
+  <span class="eth-addr" title="Click to copy">solari-dawn.eth</span>
+</footer>
 </body>
 </html>
