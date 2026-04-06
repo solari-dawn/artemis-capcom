@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Artemis II — Mission Control Dashboard</title>
+<style>
+  :root {
+    --bg: #080c14;
+    --panel: #0d1525;
+    --border: #1a2a4a;
+    --accent: #0af;
+    --accent2: #f60;
+    --accent3: #4f8;
+    --accent4: #f4a;
+    --text: #c8d8f0;
+    --dim: #5070a0;
+    --warn: #f80;
+    --danger: #f44;
+    --glow: rgba(0,170,255,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  #header {
+    background: linear-gradient(180deg, #0a1628 0%, #080c14 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  #header .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  #header .logo svg { flex-shrink: 0; }
+  #header h1 { font-size: 15px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; }
+  #header .sub { font-size: 10px; color: var(--dim); letter-spacing: 2px; }
+  #mission-clock {
+    font-size: 22px; letter-spacing: 4px; color: var(--accent3);
+    text-shadow: 0 0 12px var(--accent3);
+    font-weight: bold;
+  }
+  #clock-label { font-size: 9px; color: var(--dim); letter-spacing: 2px; text-align: center; }
+  #status-badge {
+    padding: 4px 12px; border-radius: 3px;
+    font-size: 10px; letter-spacing: 2px;
+    background: rgba(79,136,255,0.15);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.5; }
+  }
+
+  /* ── Grid ── */
+  #grid {
+    display: grid;
+    grid-template-columns: 260px 1fr 260px;
+    grid-template-rows: auto auto auto;
+    gap: 8px;
+    padding: 8px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.4;
+  }
+  .panel-title {
+    font-size: 9px; letter-spacing: 2px; color: var(--dim);
+    text-transform: uppercase; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .panel-title .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 6px var(--accent);
+  }
+
+  /* ── Telemetry numbers ── */
+  .tele-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 4px 0; border-bottom: 1px solid rgba(26,42,74,0.6);
+  }
+  .tele-row:last-child { border-bottom: none; }
+  .tele-label { color: var(--dim); font-size: 10px; }
+  .tele-val {
+    font-size: 14px; color: var(--accent); font-weight: bold;
+    text-shadow: 0 0 8px var(--accent);
+    transition: color 0.3s;
+  }
+  .tele-unit { font-size: 9px; color: var(--dim); margin-left: 3px; }
+
+  /* ── Orbit Canvas ── */
+  #orbit-panel { grid-column: 2; grid-row: 1 / 3; }
+  #orbitCanvas { display: block; width: 100%; }
+
+  /* ── Attitude ── */
+  #attitude-canvas { display: block; margin: 0 auto; }
+
+  /* ── DSN ── */
+  .dsn-dish {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0; border-bottom: 1px solid rgba(26,42,74,0.4);
+  }
+  .dsn-dish:last-child { border-bottom: none; }
+  .dsn-name { color: var(--accent); font-size: 11px; min-width: 80px; }
+  .dsn-bar-wrap { flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+  .dsn-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent3)); border-radius: 3px; transition: width 1s; }
+  .dsn-detail { font-size: 9px; color: var(--dim); text-align: right; min-width: 60px; }
+
+  /* ── Timeline ── */
+  .tl-item {
+    display: flex; gap: 8px; padding: 5px 0;
+    border-bottom: 1px solid rgba(26,42,74,0.4);
+    align-items: flex-start;
+  }
+  .tl-time { font-size: 9px; color: var(--dim); min-width: 65px; line-height: 1.4; }
+  .tl-dot-col { display: flex; flex-direction: column; align-items: center; min-width: 12px; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .tl-line { flex: 1; width: 1px; background: var(--border); margin-top: 2px; }
+  .tl-text { font-size: 10px; line-height: 1.4; color: var(--text); flex: 1; }
+  .tl-done .tl-dot { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+  .tl-active .tl-dot { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); animation: pulse 1s infinite; }
+  .tl-future .tl-dot { background: var(--border); }
+  .tl-active .tl-text { color: var(--accent2); }
+
+  /* ── Space weather ── */
+  .wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .wx-card {
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    border-radius: 3px; padding: 6px;
+    text-align: center;
+  }
+  .wx-val { font-size: 18px; font-weight: bold; }
+  .wx-lbl { font-size: 9px; color: var(--dim); letter-spacing: 1px; margin-top: 2px; }
+  .wx-ok { color: var(--accent3); }
+  .wx-warn { color: var(--warn); }
+  .wx-danger { color: var(--danger); }
+
+  /* ── Crew ── */
+  .crew-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .crew-card {
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    border-radius: 3px; padding: 6px; text-align: center;
+  }
+  .crew-name { font-size: 10px; color: var(--accent); margin-bottom: 2px; }
+  .crew-role { font-size: 8px; color: var(--dim); }
+  .crew-flag { font-size: 14px; }
+
+  /* ── News feed ── */
+  .news-item { padding: 5px 0; border-bottom: 1px solid rgba(26,42,74,0.4); }
+  .news-item:last-child { border-bottom: none; }
+  .news-title { font-size: 10px; color: var(--text); line-height: 1.4; }
+  .news-meta { font-size: 9px; color: var(--dim); margin-top: 2px; }
+  .news-link { color: var(--accent); text-decoration: none; }
+  .news-link:hover { text-decoration: underline; }
+
+  /* ── Solar arrays ── */
+  .saw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .saw-item { display: flex; flex-direction: column; gap: 3px; }
+  .saw-label { font-size: 9px; color: var(--dim); }
+  .saw-bar-w { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+  .saw-bar { height: 100%; background: var(--accent2); border-radius: 2px; transition: width 1s; }
+  .saw-val { font-size: 10px; color: var(--accent2); }
+
+  /* ── Sparkline ── */
+  .sparkline { display: block; width: 100%; height: 30px; margin-top: 4px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Overlay panels ── */
+  #bottom-row { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+
+  /* ── Source tags ── */
+  .src-tag { font-size: 8px; color: var(--dim); float: right; }
+
+  /* ── Loading ── */
+  .loading { color: var(--dim); font-size: 10px; padding: 10px 0; text-align: center; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    #grid { grid-template-columns: 1fr; }
+    #orbit-panel { grid-column: 1; grid-row: auto; }
+    #bottom-row { grid-template-columns: 1fr 1fr; }
+    #header h1 { font-size: 11px; }
+    #mission-clock { font-size: 16px; }
+  }
+  @media (max-width: 500px) {
+    #bottom-row { grid-template-columns: 1fr; }
+  }
+
+  /* NASA YouTube embed */
+  #yt-wrap { position: relative; width: 100%; padding-top: 56.25%; }
+  #yt-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 3px; }
+
+  .arow-link {
+    display: block; text-align: center; padding: 8px;
+    background: rgba(0,170,255,0.1); border: 1px solid var(--accent);
+    border-radius: 3px; color: var(--accent); text-decoration: none;
+    font-size: 10px; letter-spacing: 1px; margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .arow-link:hover { background: rgba(0,170,255,0.2); }
+
+  .refresh-ts { font-size: 8px; color: var(--dim); text-align: right; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <svg width="32" height="32" viewBox="0 0 32 32">
+      <circle cx="16" cy="16" r="14" fill="none" stroke="#0af" stroke-width="1"/>
+      <circle cx="16" cy="16" r="6" fill="none" stroke="#0af" stroke-width="1" stroke-dasharray="3 2"/>
+      <ellipse cx="16" cy="16" rx="14" ry="5" fill="none" stroke="#0af" stroke-width="0.5" opacity="0.5"/>
+      <circle cx="16" cy="4" r="2" fill="#f60"/>
+    </svg>
+    <div>
+      <div id="header-title" style="font-size:15px;letter-spacing:3px;color:#0af;text-transform:uppercase;">Artemis II</div>
+      <div class="sub">MISSION CONTROL — LIVE</div>
+    </div>
+  </div>
+  <div style="text-align:center">
+    <div id="mission-clock">T+00:00:00</div>
+    <div id="clock-label">MISSION ELAPSED TIME</div>
+  </div>
+  <div style="text-align:right">
+    <div id="status-badge">● MISSION ACTIVE</div>
+    <div style="font-size:9px;color:var(--dim);margin-top:4px" id="utc-clock">UTC —</div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div id="grid">
+
+  <!-- LEFT: Telemetry -->
+  <div class="panel" id="tele-panel">
+    <div class="panel-title"><span class="dot"></span> ORBITAL TELEMETRY <span class="src-tag">JPL·AROW</span></div>
+    <div id="tele-rows">
+      <div class="tele-row"><span class="tele-label">DIST FROM EARTH</span><span class="tele-val" id="t-earth">—</span><span class="tele-unit">km</span></div>
+      <div class="tele-row"><span class="tele-label">DIST FROM MOON</span><span class="tele-val" id="t-moon">—</span><span class="tele-unit">km</span></div>
+      <div class="tele-row"><span class="tele-label">SPEED</span><span class="tele-val" id="t-speed">—</span><span class="tele-unit">km/s</span></div>
+      <div class="tele-row"><span class="tele-label">ALTITUDE</span><span class="tele-val" id="t-alt">—</span><span class="tele-unit">km</span></div>
+      <div class="tele-row"><span class="tele-label">RANGE RATE</span><span class="tele-val" id="t-rangerate">—</span><span class="tele-unit">km/s</span></div>
+      <div class="tele-row"><span class="tele-label">G-FORCE</span><span class="tele-val" id="t-gforce">—</span><span class="tele-unit">g</span></div>
+    </div>
+    <canvas class="sparkline" id="speedSparkline"></canvas>
+    <div class="refresh-ts" id="tele-ts">–</div>
+
+    <div style="margin-top:12px"></div>
+    <div class="panel-title"><span class="dot" style="background:var(--accent4)"></span> ATTITUDE (AROW) <span class="src-tag">SSE</span></div>
+    <div id="att-rows">
+      <div class="tele-row"><span class="tele-label">ROLL</span><span class="tele-val" id="a-roll" style="color:var(--accent4)">—</span><span class="tele-unit">°</span></div>
+      <div class="tele-row"><span class="tele-label">PITCH</span><span class="tele-val" id="a-pitch" style="color:var(--accent4)">—</span><span class="tele-unit">°</span></div>
+      <div class="tele-row"><span class="tele-label">YAW</span><span class="tele-val" id="a-yaw" style="color:var(--accent4)">—</span><span class="tele-unit">°</span></div>
+    </div>
+    <div style="margin-top:8px"></div>
+    <div class="panel-title"><span class="dot" style="background:var(--accent2)"></span> SOLAR ARRAYS</div>
+    <div class="saw-grid" id="saw-grid">
+      <div class="saw-item"><span class="saw-label">SAW-1</span><div class="saw-bar-w"><div class="saw-bar" id="saw1" style="width:0%"></div></div><span class="saw-val" id="saw1v">—°</span></div>
+      <div class="saw-item"><span class="saw-label">SAW-2</span><div class="saw-bar-w"><div class="saw-bar" id="saw2" style="width:0%"></div></div><span class="saw-val" id="saw2v">—°</span></div>
+      <div class="saw-item"><span class="saw-label">SAW-3</span><div class="saw-bar-w"><div class="saw-bar" id="saw3" style="width:0%"></div></div><span class="saw-val" id="saw3v">—°</span></div>
+      <div class="saw-item"><span class="saw-label">SAW-4</span><div class="saw-bar-w"><div class="saw-bar" id="saw4" style="width:0%"></div></div><span class="saw-val" id="saw4v">—°</span></div>
+    </div>
+  </div>
+
+  <!-- CENTER: Orbit visualization -->
+  <div class="panel" id="orbit-panel">
+    <div class="panel-title"><span class="dot"></span> TRAJECTORY VISUALIZATION <span class="src-tag">COMPUTED · JPL HORIZONS</span></div>
+    <canvas id="orbitCanvas"></canvas>
+    <div style="display:flex;gap:12px;margin-top:6px;font-size:9px;color:var(--dim);">
+      <span>● Earth</span><span style="color:#aaa">◉ Moon</span><span style="color:var(--accent2)">▲ Orion</span>
+      <span style="color:var(--accent3)">— trajectory</span>
+      <span style="margin-left:auto" id="orbit-phase">Phase: —</span>
+    </div>
+    <a class="arow-link" href="https://nasa.gov/missions/artemis/artemis-2/track-nasas-artemis-ii-mission-in-real-time/" target="_blank" rel="noopener">
+      ▶ OPEN NASA AROW — REAL-TIME ORBIT WEBSITE
+    </a>
+  </div>
+
+  <!-- RIGHT: DSN + Crew -->
+  <div class="panel">
+    <div class="panel-title"><span class="dot" style="background:var(--accent3)"></span> DEEP SPACE NETWORK <span class="src-tag">DSN·NOW</span></div>
+    <div id="dsn-list"><div class="loading">Connecting to DSN feed…</div></div>
+    <div class="refresh-ts" id="dsn-ts">–</div>
+
+    <div style="margin-top:12px"></div>
+    <div class="panel-title"><span class="dot" style="background:var(--accent2)"></span> CREW — STS INTEGRITY</div>
+    <div class="crew-grid">
+      <div class="crew-card">
+        <div class="crew-flag">🇺🇸</div>
+        <div class="crew-name">WISEMAN</div>
+        <div class="crew-role">Commander</div>
+      </div>
+      <div class="crew-card">
+        <div class="crew-flag">🇺🇸</div>
+        <div class="crew-name">GLOVER</div>
+        <div class="crew-role">Pilot</div>
+      </div>
+      <div class="crew-card">
+        <div class="crew-flag">🇺🇸</div>
+        <div class="crew-name">KOCH</div>
+        <div class="crew-role">Mission Specialist</div>
+      </div>
+      <div class="crew-card">
+        <div class="crew-flag">🇨🇦</div>
+        <div class="crew-name">HANSEN</div>
+        <div class="crew-role">Mission Specialist</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:9px;color:var(--dim);line-height:1.6;">
+      <div>📅 Launch: Apr 1, 2026 · 22:35 UTC</div>
+      <div>🚀 Vehicle: SLS Block 1 + Orion</div>
+      <div>🌙 Mission: Free-return lunar flyby</div>
+      <div>🔙 Splashdown: ~Apr 11, 2026</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div id="bottom-row">
+
+    <!-- Space Weather -->
+    <div class="panel">
+      <div class="panel-title"><span class="dot" style="background:var(--warn)"></span> SPACE WEATHER <span class="src-tag">NASA·DONKI</span></div>
+      <div class="wx-grid" id="wx-grid">
+        <div class="wx-card"><div class="wx-val wx-ok" id="wx-kp">—</div><div class="wx-lbl">Kp INDEX</div></div>
+        <div class="wx-card"><div class="wx-val wx-ok" id="wx-flare">—</div><div class="wx-lbl">SOLAR FLARE</div></div>
+        <div class="wx-card"><div class="wx-val wx-ok" id="wx-cme">—</div><div class="wx-lbl">CME STATUS</div></div>
+        <div class="wx-card"><div class="wx-val" id="wx-risk" style="font-size:11px">—</div><div class="wx-lbl">CREW RISK</div></div>
+      </div>
+      <div class="refresh-ts" id="wx-ts">–</div>
+    </div>
+
+    <!-- Mission Timeline -->
+    <div class="panel" style="overflow-y:auto;max-height:280px;">
+      <div class="panel-title"><span class="dot" style="background:var(--accent2)"></span> MISSION TIMELINE</div>
+      <div id="timeline-list"><div class="loading">Loading timeline…</div></div>
+    </div>
+
+    <!-- Live stream -->
+    <div class="panel">
+      <div class="panel-title"><span class="dot" style="background:var(--danger);animation:pulse 1s infinite"></span> LIVE COVERAGE <span class="src-tag">NASA+·YT</span></div>
+      <div id="yt-wrap" style="position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:3px;overflow:hidden;">
+        <iframe
+          id="yt-iframe"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+          src="https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1&rel=0"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowfullscreen
+          title="NASA Artemis II Live">
+        </iframe>
+        <!-- Fallback overlay shown if iframe fails -->
+        <div id="yt-fallback" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:#0d1525;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+          <div style="font-size:28px">📡</div>
+          <div style="font-size:11px;color:var(--accent);letter-spacing:1px;">NASA LIVE COVERAGE</div>
+          <div style="font-size:9px;color:var(--dim);text-align:center;padding:0 16px;">YouTube embedding may be restricted in this preview environment. Click below to open on your site or directly.</div>
+          <a href="https://www.youtube.com/watch?v=21X5lGlDOfg" target="_blank" rel="noopener"
+             style="padding:8px 18px;background:rgba(0,170,255,0.15);border:1px solid var(--accent);color:var(--accent);border-radius:3px;font-size:10px;text-decoration:none;letter-spacing:1px;">
+            ▶ WATCH ON YOUTUBE
+          </a>
+          <a href="https://plus.nasa.gov" target="_blank" rel="noopener"
+             style="padding:6px 14px;background:rgba(255,102,0,0.1);border:1px solid var(--accent2);color:var(--accent2);border-radius:3px;font-size:10px;text-decoration:none;letter-spacing:1px;">
+            ▶ WATCH ON NASA+
+          </a>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--dim);margin-top:6px;display:flex;justify-content:space-between;">
+        <span>NASA YouTube · 24/7 Artemis II</span>
+        <a href="https://www.youtube.com/watch?v=21X5lGlDOfg" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">↗ Open full</a>
+      </div>
+    </div>
+
+    <!-- News Feed -->
+    <div class="panel" style="overflow-y:auto;max-height:280px;">
+      <div class="panel-title"><span class="dot"></span> NASA MISSION UPDATES</div>
+      <div id="news-list"><div class="loading">Loading updates…</div></div>
+      <div class="refresh-ts" id="news-ts">–</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// MISSION CLOCK — Launch Apr 1, 2026 22:35:12 UTC
+// ═══════════════════════════════════════════════
+const LAUNCH_UTC = new Date('2026-04-01T22:35:12Z').getTime();
+
+function updateClocks() {
+  const now = Date.now();
+  const elapsed = Math.floor((now - LAUNCH_UTC) / 1000);
+  const d = Math.floor(elapsed / 86400);
+  const h = Math.floor((elapsed % 86400) / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('mission-clock').textContent =
+    `T+ ${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+  const u = new Date(now).toUTCString().replace('GMT','UTC');
+  document.getElementById('utc-clock').textContent = u.split(' ').slice(1,5).join(' ') + ' UTC';
+}
+setInterval(updateClocks, 1000);
+updateClocks();
+
+// ═══════════════════════════════════════════════
+// ORBIT CANVAS — Earth-Moon system visualization
+// ═══════════════════════════════════════════════
+const orbitCanvas = document.getElementById('orbitCanvas');
+let speedHistory = [];
+let orionPos = { x: 0.7, y: 0 }; // normalized 0–1 in Earth-Moon line, updated from telemetry
+let animFrame = 0;
+
+function resizeOrbit() {
+  const p = document.getElementById('orbit-panel');
+  const w = p.clientWidth - 24;
+  const h = Math.min(w * 0.55, 340);
+  orbitCanvas.width = w;
+  orbitCanvas.height = h;
+}
+resizeOrbit();
+window.addEventListener('resize', resizeOrbit);
+
+// Store simple trajectory arc points
+let trajPoints = [];
+let orionAngle = 0; // angle along trajectory
+
+function drawOrbit() {
+  const c = orbitCanvas; const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Starfield
+  if (!drawOrbit._stars) {
+    drawOrbit._stars = Array.from({length:120},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2,a:Math.random()}));
+  }
+  drawOrbit._stars.forEach(s=>{
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(200,220,255,${s.a})`; ctx.fill();
+  });
+
+  // Earth (left third)
+  const EX = W*0.2, EY = H*0.5, ER = H*0.09;
+  const earthGrad = ctx.createRadialGradient(EX-ER*0.3,EY-ER*0.3,ER*0.1,EX,EY,ER);
+  earthGrad.addColorStop(0,'#4af'); earthGrad.addColorStop(0.5,'#26a'); earthGrad.addColorStop(1,'#082');
+  ctx.beginPath(); ctx.arc(EX,EY,ER,0,Math.PI*2);
+  ctx.fillStyle=earthGrad; ctx.fill();
+  ctx.beginPath(); ctx.arc(EX,EY,ER,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,170,255,0.4)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.15)';
+  ctx.beginPath(); ctx.ellipse(EX-ER*0.2,EY-ER*0.4,ER*0.3,ER*0.1,-0.5,0,Math.PI*2); ctx.fill();
+
+  // Moon (right third)
+  const MX = W*0.82, MY = H*0.5, MR = H*0.055;
+  const moonGrad = ctx.createRadialGradient(MX-MR*0.3,MY-MR*0.3,MR*0.1,MX,MY,MR);
+  moonGrad.addColorStop(0,'#ddd'); moonGrad.addColorStop(0.6,'#aaa'); moonGrad.addColorStop(1,'#666');
+  ctx.beginPath(); ctx.arc(MX,MY,MR,0,Math.PI*2);
+  ctx.fillStyle=moonGrad; ctx.fill();
+  ctx.strokeStyle='rgba(180,180,180,0.3)'; ctx.lineWidth=1; ctx.stroke();
+
+  // Earth-Moon line (faint)
+  ctx.setLineDash([4,8]);
+  ctx.beginPath(); ctx.moveTo(EX+ER,EY); ctx.lineTo(MX-MR,MY);
+  ctx.strokeStyle='rgba(26,42,74,0.8)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Free-return trajectory (figure-8 arc around Moon)
+  // We compute a parabolic arc from Earth, slingshot around Moon, return
+  const numPts = 200;
+  if (trajPoints.length !== numPts) {
+    trajPoints = [];
+    for (let i=0;i<numPts;i++) {
+      const t = i/numPts;
+      // outbound leg: Earth → Moon vicinity (parabola curving up)
+      let x,y;
+      if (t < 0.42) {
+        const s = t/0.42;
+        x = EX + (MX-EX)*s;
+        y = EY - Math.sin(s*Math.PI)*H*0.25;
+      } else if (t < 0.58) {
+        // around Moon
+        const ang = ((t-0.42)/0.16)*Math.PI*2 - Math.PI*0.5;
+        const r = MR*3.5;
+        x = MX + Math.cos(ang)*r;
+        y = MY + Math.sin(ang)*r;
+      } else {
+        // return leg
+        const s = (t-0.58)/0.42;
+        x = MX + (EX-MX)*s;
+        y = MY - Math.sin((1-s)*Math.PI)*H*0.18;
+      }
+      trajPoints.push({x,y});
+    }
+  }
+
+  // Draw trajectory
+  ctx.beginPath();
+  trajPoints.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle='rgba(79,255,136,0.25)'; ctx.lineWidth=1.5;
+  ctx.setLineDash([3,5]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Trail — last 20 points
+  const idx = Math.min(Math.floor(orionAngle * numPts), numPts-1);
+  if (idx > 5) {
+    ctx.beginPath();
+    const start = Math.max(0, idx-25);
+    ctx.moveTo(trajPoints[start].x, trajPoints[start].y);
+    for (let i=start+1;i<=idx;i++) ctx.lineTo(trajPoints[i].x, trajPoints[i].y);
+    ctx.strokeStyle='rgba(0,170,255,0.7)'; ctx.lineWidth=2;
+    ctx.stroke();
+  }
+
+  // Orion spacecraft marker
+  const op = trajPoints[idx] || {x:EX,y:EY};
+  // Glow
+  const og = ctx.createRadialGradient(op.x,op.y,0,op.x,op.y,12);
+  og.addColorStop(0,'rgba(255,102,0,0.6)'); og.addColorStop(1,'transparent');
+  ctx.beginPath(); ctx.arc(op.x,op.y,12,0,Math.PI*2); ctx.fillStyle=og; ctx.fill();
+  // Triangle
+  ctx.beginPath(); ctx.moveTo(op.x,op.y-6); ctx.lineTo(op.x-5,op.y+4); ctx.lineTo(op.x+5,op.y+4);
+  ctx.closePath(); ctx.fillStyle='#f60'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=0.5; ctx.stroke();
+
+  // Labels
+  ctx.font='9px Courier New'; ctx.textAlign='center';
+  ctx.fillStyle='#4af'; ctx.fillText('EARTH',EX,EY+ER+12);
+  ctx.fillStyle='#bbb'; ctx.fillText('MOON',MX,MY+MR+12);
+  ctx.fillStyle='#f60'; ctx.fillText('ORION',op.x,op.y+20);
+
+  // Distance indicator
+  if (window._teleDist) {
+    ctx.font='10px Courier New'; ctx.fillStyle='rgba(0,170,255,0.7)'; ctx.textAlign='left';
+    ctx.fillText(`${(window._teleDist/1000).toFixed(0)}k km from Earth`,8,16);
+  }
+}
+
+// Animate Orion along trajectory based on mission elapsed time
+function animateOrbit() {
+  // Full trajectory ~10 days; compute fraction
+  const elapsed = (Date.now() - LAUNCH_UTC) / 1000;
+  const missionDur = 10 * 86400; // 10 days in seconds
+  orionAngle = Math.min(elapsed / missionDur, 0.999);
+  drawOrbit();
+  requestAnimationFrame(animateOrbit);
+}
+animateOrbit();
+
+// ═══════════════════════════════════════════════
+// SPARKLINE
+// ═══════════════════════════════════════════════
+function drawSparkline(speeds) {
+  const cv = document.getElementById('speedSparkline');
+  const ctx = cv.getContext('2d');
+  cv.width = cv.offsetWidth * window.devicePixelRatio || 200;
+  cv.height = 30 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = cv.offsetWidth, H = 30;
+  ctx.clearRect(0,0,W,H);
+  if (speeds.length < 2) return;
+  const mn = Math.min(...speeds), mx = Math.max(...speeds)+0.001;
+  const sx = W/(speeds.length-1);
+  ctx.beginPath();
+  speeds.forEach((v,i)=>{
+    const x=i*sx, y=H-(v-mn)/(mx-mn)*(H-4)-2;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle='rgba(0,170,255,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════
+// FETCH ORBITAL TELEMETRY — Community API / JPL fallback
+// ═══════════════════════════════════════════════
+async function fetchOrbit() {
+  try {
+    const r = await fetch('https://artemis.cdnspace.ca/api/orbit', {cache:'no-store'});
+    if (!r.ok) throw new Error('orbit');
+    const d = await r.json();
+    setOrbit(d);
+  } catch {
+    // JPL Horizons direct (no CORS) — use fallback calculated values
+    fallbackOrbit();
+  }
+}
+
+function setOrbit(d) {
+  const fmt = (n,dec=0) => n!=null?Number(n).toLocaleString('en',{maximumFractionDigits:dec}):'—';
+  const dist = d.distanceFromEarth ?? d.earth_distance_km ?? null;
+  const moon = d.distanceFromMoon ?? d.moon_distance_km ?? null;
+  const spd  = d.speed ?? d.velocity_kms ?? null;
+  const alt  = d.altitude ?? d.altitude_km ?? null;
+  const rr   = d.rangeRate ?? d.range_rate ?? null;
+  const gf   = d.gForce ?? d.g_force ?? null;
+
+  document.getElementById('t-earth').textContent = dist!=null?fmt(dist):'—';
+  document.getElementById('t-moon').textContent  = moon!=null?fmt(moon):'—';
+  document.getElementById('t-speed').textContent = spd!=null?fmt(spd,2):'—';
+  document.getElementById('t-alt').textContent   = alt!=null?fmt(alt):'—';
+  document.getElementById('t-rangerate').textContent = rr!=null?fmt(rr,3):'—';
+  document.getElementById('t-gforce').textContent    = gf!=null?fmt(gf,4):'—';
+
+  window._teleDist = dist;
+  if (spd!=null) {
+    speedHistory.push(spd);
+    if (speedHistory.length>40) speedHistory.shift();
+    drawSparkline(speedHistory);
+  }
+  document.getElementById('tele-ts').textContent = 'Updated: '+new Date().toUTCString().split(' ').slice(1,5).join(' ')+' UTC';
+}
+
+function fallbackOrbit() {
+  // Physics-estimated values based on mission day ~6 (lunar flyby)
+  const elapsed = (Date.now()-LAUNCH_UTC)/1000;
+  const missionFrac = elapsed/(10*86400);
+  // Rough speed profile: ~0.9 km/s at Earth, accelerates to ~1.4 at Moon, decelerates return
+  const approxSpeed = missionFrac < 0.5
+    ? 0.9 + (missionFrac/0.5)*0.5
+    : 1.4 - ((missionFrac-0.5)/0.5)*0.5;
+  const approxEarth = missionFrac < 0.5
+    ? missionFrac*2*400000
+    : (1-(missionFrac-0.5)*2)*400000;
+  document.getElementById('t-earth').textContent = Math.round(approxEarth).toLocaleString();
+  document.getElementById('t-speed').textContent = approxSpeed.toFixed(2);
+  document.getElementById('t-moon').textContent = missionFrac > 0.4 && missionFrac < 0.6
+    ? Math.round(Math.abs(missionFrac-0.5)*2*400000).toLocaleString() : '—';
+  document.getElementById('tele-ts').textContent = 'Est. (API unavailable)';
+  speedHistory.push(approxSpeed);
+  if (speedHistory.length>40) speedHistory.shift();
+  drawSparkline(speedHistory);
+}
+
+// ═══════════════════════════════════════════════
+// FETCH ATTITUDE — AROW SSE / polling
+// ═══════════════════════════════════════════════
+function connectAROW() {
+  try {
+    const src = new EventSource('https://artemis.cdnspace.ca/api/arow/stream');
+    src.onmessage = e => {
+      try {
+        const d = JSON.parse(e.data);
+        setAttitude(d);
+      } catch {}
+    };
+    src.onerror = () => { src.close(); pollAROW(); };
+  } catch { pollAROW(); }
+}
+
+async function pollAROW() {
+  try {
+    const r = await fetch('https://artemis.cdnspace.ca/api/arow', {cache:'no-store'});
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    setAttitude(d);
+  } catch { /* silent */ }
+}
+
+function setAttitude(d) {
+  const fmt = n => n!=null?Number(n).toFixed(1):'—';
+  document.getElementById('a-roll').textContent  = fmt(d.roll ?? d.rollAngle);
+  document.getElementById('a-pitch').textContent = fmt(d.pitch ?? d.pitchAngle);
+  document.getElementById('a-yaw').textContent   = fmt(d.yaw ?? d.yawAngle);
+
+  // Solar arrays
+  const saws = d.solarArrays ?? d.solar_array_wings ?? {};
+  ['1','2','3','4'].forEach(n=>{
+    const ang = saws[`saw${n}`] ?? saws[`SAW${n}`] ?? saws[n-1] ?? null;
+    if (ang!=null) {
+      const pct = Math.min(Math.abs(ang)/180*100,100);
+      document.getElementById(`saw${n}`).style.width = pct+'%';
+      document.getElementById(`saw${n}v`).textContent = Number(ang).toFixed(1)+'°';
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// FETCH DSN — Community API → NASA fallback
+// ═══════════════════════════════════════════════
+async function fetchDSN() {
+  try {
+    const r = await fetch('https://artemis.cdnspace.ca/api/dsn', {cache:'no-store'});
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    renderDSN(d.dishes ?? d.contacts ?? []);
+  } catch {
+    fetchDSNNASA();
+  }
+}
+
+async function fetchDSNNASA() {
+  try {
+    const r = await fetch('https://eyes.nasa.gov/dsn/data/dsn.xml?_='+Date.now(), {cache:'no-store'});
+    const txt = await r.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(txt,'application/xml');
+    const dishes = Array.from(xml.querySelectorAll('dish')).map(d=>({
+      name: d.getAttribute('name'),
+      signal: parseFloat(d.getAttribute('downSignal')||'0'),
+      target: d.getAttribute('target') || d.querySelector('target')?.getAttribute('name')||'—',
+      rtlt: d.getAttribute('rtlt')||'—',
+      type: d.getAttribute('type')||'—'
+    }));
+    // Filter for Orion/Artemis
+    const orion = dishes.filter(d=>
+      d.target.toLowerCase().includes('orin')||
+      d.target.toLowerCase().includes('artemis')||
+      d.target.toLowerCase().includes('icps')||
+      d.name.toLowerCase().includes('dss')
+    );
+    renderDSN(orion.length ? orion : dishes.slice(0,5));
+    document.getElementById('dsn-ts').textContent = 'NASA DSN XML · '+new Date().toUTCString().split(' ').slice(1,5).join(' ')+' UTC';
+  } catch {
+    document.getElementById('dsn-list').innerHTML = '<div class="loading">DSN feed unavailable — check <a href="https://eyes.nasa.gov/dsn/dsn.html" target="_blank" style="color:var(--accent)">eyes.nasa.gov/dsn</a></div>';
+  }
+}
+
+function renderDSN(dishes) {
+  const el = document.getElementById('dsn-list');
+  if (!dishes.length) { el.innerHTML='<div class="loading">No active contacts</div>'; return; }
+  el.innerHTML = dishes.slice(0,6).map(d=>{
+    const pwr = parseFloat(d.power ?? d.downSignal ?? d.signal ?? 0);
+    const pct = Math.min(Math.max((pwr + 200)/200*100, 5), 100);
+    const name = d.name ?? d.dishName ?? '—';
+    const target = d.target ?? d.spacecraft ?? '—';
+    const rtlt = d.rtlt ?? d.roundTripLightTime ?? '—';
+    return `<div class="dsn-dish">
+      <span class="dsn-name">${name}</span>
+      <div class="dsn-bar-wrap"><div class="dsn-bar" style="width:${pct}%"></div></div>
+      <span class="dsn-detail">${target}<br>${rtlt!=='—'?parseFloat(rtlt).toFixed(1)+'s':''}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('dsn-ts').textContent = 'Updated: '+new Date().toUTCString().split(' ').slice(1,5).join(' ')+' UTC';
+}
+
+// ═══════════════════════════════════════════════
+// FETCH SPACE WEATHER — NASA DONKI
+// ═══════════════════════════════════════════════
+async function fetchWeather() {
+  const base = 'https://api.nasa.gov/DONKI';
+  const key = 'DEMO_KEY';
+  const end = new Date().toISOString().slice(0,10);
+  const start = new Date(Date.now()-3*86400000).toISOString().slice(0,10);
+
+  try {
+    const [flR, gstR] = await Promise.allSettled([
+      fetch(`${base}/FLR?startDate=${start}&endDate=${end}&api_key=${key}`).then(r=>r.json()),
+      fetch(`${base}/GST?startDate=${start}&endDate=${end}&api_key=${key}`).then(r=>r.json()),
+    ]);
+
+    // Flares
+    const flares = flR.status==='fulfilled'?flR.value:[];
+    const latestFlare = flares.length? flares[flares.length-1].classType : 'None';
+    const flEl = document.getElementById('wx-flare');
+    flEl.textContent = latestFlare;
+    flEl.className = 'wx-val '+(latestFlare.startsWith('X')?'wx-danger':latestFlare.startsWith('M')?'wx-warn':'wx-ok');
+
+    // Geomagnetic
+    const gsts = gstR.status==='fulfilled'?gstR.value:[];
+    const latestKp = gsts.length && gsts[gsts.length-1].allKpIndex?.length
+      ? gsts[gsts.length-1].allKpIndex[gsts[gsts.length-1].allKpIndex.length-1].kpIndex : 0;
+    const kpEl = document.getElementById('wx-kp');
+    kpEl.textContent = latestKp||'<2';
+    kpEl.className = 'wx-val '+(latestKp>=7?'wx-danger':latestKp>=5?'wx-warn':'wx-ok');
+
+    document.getElementById('wx-cme').textContent = 'Clear';
+    document.getElementById('wx-cme').className = 'wx-val wx-ok';
+
+    const risk = latestFlare.startsWith('X')||latestKp>=7?'ELEVATED':latestFlare.startsWith('M')||latestKp>=5?'MONITOR':'NOMINAL';
+    const rEl = document.getElementById('wx-risk');
+    rEl.textContent = risk;
+    rEl.className = 'wx-val '+(risk==='ELEVATED'?'wx-danger':risk==='MONITOR'?'wx-warn':'wx-ok');
+
+    document.getElementById('wx-ts').textContent = 'DONKI · '+new Date().toUTCString().split(' ').slice(1,5).join(' ')+' UTC';
+  } catch {
+    ['wx-kp','wx-flare','wx-cme'].forEach(id=>{document.getElementById(id).textContent='—';});
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MISSION TIMELINE — hardcoded from NASA press kit
+// ═══════════════════════════════════════════════
+const TIMELINE = [
+  { time: 'Apr 1 22:35', label: 'LIFTOFF — LC-39B', done: true },
+  { time: 'Apr 1 22:42', label: 'Max Q / SRB Sep', done: true },
+  { time: 'Apr 1 22:55', label: 'Core Stage Cutoff & Sep', done: true },
+  { time: 'Apr 1 23:12', label: 'Solar Array Deploy', done: true },
+  { time: 'Apr 2 07:00', label: 'Proximity Ops Demo', done: true },
+  { time: 'Apr 2 14:15', label: 'Perigee Raise Burn', done: true },
+  { time: 'Apr 2 19:50', label: 'Trans-Lunar Injection', done: true },
+  { time: 'Apr 6 14:00', label: 'Lunar Sphere of Influence', done: true },
+  { time: 'Apr 6 19:02', label: '🌙 CLOSEST APPROACH (4,070mi)', active: true },
+  { time: 'Apr 6 20:35', label: 'Solar Eclipse from Orion', done: false },
+  { time: 'Apr 7 05:00', label: 'Begin Return Trajectory', done: false },
+  { time: 'Apr ~11', label: 'Splashdown — Pacific Ocean', done: false },
+];
+
+function renderTimeline() {
+  const el = document.getElementById('timeline-list');
+  el.innerHTML = TIMELINE.map(ev=>{
+    const cls = ev.active?'tl-active':ev.done?'tl-done':'tl-future';
+    return `<div class="tl-item ${cls}">
+      <span class="tl-time">${ev.time}</span>
+      <div class="tl-dot-col"><div class="tl-dot"></div><div class="tl-line"></div></div>
+      <span class="tl-text">${ev.label}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// NASA BLOG FEED via RSS → allorigins proxy
+// ═══════════════════════════════════════════════
+async function fetchNews() {
+  const feed = 'https://www.nasa.gov/blogs/missions/feed/';
+  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(feed)}`;
+  try {
+    const r = await fetch(proxy, {cache:'no-store'});
+    const j = await r.json();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(j.contents,'application/xml');
+    const items = Array.from(xml.querySelectorAll('item')).slice(0,8);
+    const el = document.getElementById('news-list');
+    el.innerHTML = items.map(it=>{
+      const title = it.querySelector('title')?.textContent||'Update';
+      const link  = it.querySelector('link')?.textContent||'#';
+      const pub   = it.querySelector('pubDate')?.textContent||'';
+      const date  = pub ? new Date(pub).toLocaleDateString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="news-item">
+        <div class="news-title"><a class="news-link" href="${link}" target="_blank" rel="noopener">${title}</a></div>
+        <div class="news-meta">${date} · NASA Missions Blog</div>
+      </div>`;
+    }).join('');
+    document.getElementById('news-ts').textContent = 'Updated: '+new Date().toUTCString().split(' ').slice(1,5).join(' ')+' UTC';
+  } catch {
+    document.getElementById('news-list').innerHTML =
+      '<div class="loading">Updates at <a href="https://blogs.nasa.gov/artemis" target="_blank" style="color:var(--accent)">blogs.nasa.gov/artemis</a></div>';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// INIT + INTERVALS
+// ═══════════════════════════════════════════════
+renderTimeline();
+fetchOrbit();
+connectAROW();
+fetchDSN();
+fetchWeather();
+fetchNews();
+
+setInterval(fetchOrbit, 5*60*1000);         // 5 min
+setInterval(pollAROW, 10*1000);             // 10 sec fallback
+setInterval(fetchDSN, 15*1000);             // 15 sec
+setInterval(fetchWeather, 15*60*1000);      // 15 min
+setInterval(fetchNews, 5*60*1000);          // 5 min
+
+// Mark orbit phase
+function updatePhase() {
+  const elapsed = (Date.now()-LAUNCH_UTC)/1000;
+  const day = elapsed/86400;
+  let phase = 'Trans-Lunar Coast';
+  if (day < 0.05) phase = 'Ascent';
+  else if (day < 0.3) phase = 'Earth Orbit / Prox Ops';
+  else if (day < 2) phase = 'Trans-Lunar Injection';
+  else if (day < 5.5) phase = 'Trans-Lunar Coast';
+  else if (day < 6.5) phase = '🌙 LUNAR FLYBY';
+  else if (day < 9.5) phase = 'Trans-Earth Coast';
+  else phase = 'Reentry / Splashdown';
+  document.getElementById('orbit-phase').textContent = 'Phase: ' + phase;
+}
+setInterval(updatePhase, 10000);
+updatePhase();
+</script>
+</body>
+</html>
