@@ -211,7 +211,7 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   /* ΓöÇΓöÇ Overlay panels ΓöÇΓöÇ */
-  #bottom-row { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  #bottom-row { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
 
   /* ΓöÇΓöÇ Source tags ΓöÇΓöÇ */
   .src-tag { font-size: 8px; color: var(--dim); float: right; }
@@ -378,11 +378,16 @@
     </a>
   </div>
 
-  <!-- RIGHT: DSN + Crew -->
+  <!-- RIGHT: Space Weather + Crew -->
   <div class="panel">
-    <div class="panel-title"><span class="dot" style="background:var(--accent3)"></span> DEEP SPACE NETWORK <span class="src-tag">DSN┬╖NOW</span></div>
-    <div id="dsn-list"><div class="loading">Connecting to DSN feedΓÇª</div></div>
-    <div class="refresh-ts" id="dsn-ts">ΓÇô</div>
+    <div class="panel-title"><span class="dot" style="background:var(--warn)"></span> SPACE WEATHER <span class="src-tag">NASA·DONKI</span></div>
+    <div class="wx-grid" id="wx-grid">
+      <div class="wx-card"><div class="wx-val wx-ok" id="wx-kp">—</div><div class="wx-lbl">Kp INDEX</div></div>
+      <div class="wx-card"><div class="wx-val wx-ok" id="wx-flare">—</div><div class="wx-lbl">SOLAR FLARE</div></div>
+      <div class="wx-card"><div class="wx-val wx-ok" id="wx-cme">—</div><div class="wx-lbl">CME STATUS</div></div>
+      <div class="wx-card"><div class="wx-val" id="wx-risk" style="font-size:11px">—</div><div class="wx-lbl">CREW RISK</div></div>
+    </div>
+    <div class="refresh-ts" id="wx-ts">—</div>
 
     <div style="margin-top:12px"></div>
     <div class="panel-title"><span class="dot" style="background:var(--accent2)"></span> CREW ΓÇö STS INTEGRITY</div>
@@ -419,29 +424,22 @@
   <!-- BOTTOM ROW -->
   <div id="bottom-row">
 
-    <!-- Space Weather -->
-    <div class="panel">
-      <div class="panel-title"><span class="dot" style="background:var(--warn)"></span> SPACE WEATHER <span class="src-tag">NASA┬╖DONKI</span></div>
-      <div class="wx-grid" id="wx-grid">
-        <div class="wx-card"><div class="wx-val wx-ok" id="wx-kp">ΓÇö</div><div class="wx-lbl">Kp INDEX</div></div>
-        <div class="wx-card"><div class="wx-val wx-ok" id="wx-flare">ΓÇö</div><div class="wx-lbl">SOLAR FLARE</div></div>
-        <div class="wx-card"><div class="wx-val wx-ok" id="wx-cme">ΓÇö</div><div class="wx-lbl">CME STATUS</div></div>
-        <div class="wx-card"><div class="wx-val" id="wx-risk" style="font-size:11px">ΓÇö</div><div class="wx-lbl">CREW RISK</div></div>
-      </div>
-      <div class="refresh-ts" id="wx-ts">ΓÇô</div>
-    </div>
-
     <!-- Mission Timeline -->
-    <div class="panel" style="overflow-y:auto;max-height:280px;">
+    <div class="panel" style="overflow-y:auto;max-height:320px;">
       <div class="panel-title"><span class="dot" style="background:var(--accent2)"></span> MISSION TIMELINE</div>
-      <div id="timeline-list"><div class="loading">Loading timelineΓÇª</div></div>
+      <div id="timeline-list"><div class="loading">Loading timeline...</div></div>
     </div>
 
-    <!-- News Feed -->
-    <div class="panel" style="overflow-y:auto;max-height:280px;">
+    <!-- Mission Updates + Live DSN Contact Log -->
+    <div class="panel" style="overflow-y:auto;max-height:320px;">
+      <div class="panel-title"><span class="dot" style="background:var(--accent3)"></span> DEEP SPACE NETWORK <span class="src-tag">DSN&middot;NOW</span></div>
+      <div id="dsn-list"><div class="loading">Connecting to DSN feed...</div></div>
+      <div class="refresh-ts" id="dsn-ts">&mdash;</div>
+
+      <div style="margin-top:12px"></div>
       <div class="panel-title"><span class="dot"></span> NASA MISSION UPDATES</div>
-      <div id="news-list"><div class="loading">Loading updatesΓÇª</div></div>
-      <div class="refresh-ts" id="news-ts">ΓÇô</div>
+      <div id="news-list"><div class="loading">Loading updates...</div></div>
+      <div class="refresh-ts" id="news-ts">&mdash;</div>
     </div>
 
   </div>
