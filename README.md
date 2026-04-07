@@ -1,7 +1,5 @@
 # Artemis CAPCOM — Mission Control Dashboard
 
-**Live site → [solari-dawn.github.io/artemis-capcom](https://solari-dawn.github.io/artemis-capcom/)**
-
 A real-time, single-file mission control dashboard for NASA's Artemis II lunar flyby mission.  
 Built with pure HTML, CSS, and vanilla JavaScript — no frameworks, no build tools, no tracking, no ads.
 
