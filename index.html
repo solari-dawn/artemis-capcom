@@ -665,6 +665,7 @@
 <footer id="site-footer">
   Public good project &mdash; no ads, no tracking, no monetization layer. &nbsp;
   ETH donations welcome: <span class="eth-addr" title="Click to copy">solari-dawn.eth</span>
+  <span style="margin-left:12px;color:var(--dim);font-size:11px;">| Version: <span id="site-version">v0.1.0</span></span>
 </footer>
 
 <script>
@@ -1396,6 +1397,19 @@ document.querySelectorAll('.eth-addr').forEach(el => {
     }).catch(() => {});
   });
 });
+
+// Populate version display in footer from meta tag or VERSION file
+(function showVersion(){
+  const el = document.getElementById('site-version');
+  if (!el) return;
+  const meta = document.querySelector('meta[name="version"]');
+  if (meta && meta.content) { el.textContent = meta.content; return; }
+  // Fallback to fetching VERSION file
+  fetch('VERSION', {cache:'no-store'})
+    .then(r => r.ok ? r.text() : '')
+    .then(t => { if (t && t.trim()) el.textContent = t.trim(); })
+    .catch(() => {});
+})();
 </script>
 
 </body>
