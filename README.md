@@ -1,5 +1,7 @@
 # Artemis CAPCOM — Mission Control Dashboard
 
+**Version:** v0.1.0
+
 A real-time mission control dashboard for NASA's Artemis II lunar flyby mission.  
 Built with pure HTML, CSS, and vanilla JavaScript — no frameworks, no build tools, no tracking, no ads.
 
