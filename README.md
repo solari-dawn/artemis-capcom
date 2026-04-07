@@ -42,7 +42,8 @@ Built with pure HTML, CSS, and vanilla JavaScript — no frameworks, no build to
 ## Usage
 
 ### View live
-Open index.html in any modern browser.
+- Visit the live site: https://solari-dawn.github.io/artemis-capcom/
+- Or open `index.html` in any modern browser.
 
 ### Run locally
 ```bash
