@@ -1,6 +1,6 @@
-# Artemis II — Mission Control Dashboard
+# Artemis CAPCOM — Mission Control Dashboard
 
-**Live site → [solari-dawn.github.io/artemis2](https://solari-dawn.github.io/artemis2/)**
+**Live site → [solari-dawn.github.io/artemis-capcom](https://solari-dawn.github.io/artemis-capcom/)**
 
 A real-time, single-file mission control dashboard for NASA's Artemis II lunar flyby mission.  
 Built with pure HTML, CSS, and vanilla JavaScript — no frameworks, no build tools, no tracking, no ads.
@@ -46,8 +46,8 @@ Open **[solari-dawn.github.io/artemis2](https://solari-dawn.github.io/artemis2/)
 
 ### Run locally
 ```bash
-git clone https://github.com/solari-dawn/artemis2.git
-cd artemis2
+git clone https://github.com/solari-dawn/artemis-capcom.git
+cd artemis-capcom
 # Open in browser — no server needed
 start index.html    # Windows
 open index.html     # macOS
@@ -55,7 +55,7 @@ open index.html     # macOS
 
 ### Deploy your own copy
 Fork this repo, then in your fork go to **Settings → Pages → Source: Deploy from branch → main / (root)**.
-Your copy will be live at `https://<your-username>.github.io/artemis2/`.
+Your copy will be live at `https://<your-username>.github.io/artemis-capcom/`.
 
 ---
 
