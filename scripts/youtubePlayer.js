@@ -109,10 +109,32 @@ function youtubePlayer(url, container) {
 
   // -- Render embedded iframe (primary path) --------------------------------
   function renderEmbed(videoId) {
+    const origin = (window.location.origin && window.location.origin !== 'null')
+      ? '&origin=' + encodeURIComponent(window.location.origin) : '';
+    const NASA_CH = 'UCLA_DiR1FfKNvjuUpBHmylQ'; // NASA TV YouTube channel
+
+    // Phase 2: try NASA channel live stream before static thumbnail
+    function tryNASALive() {
+      window.removeEventListener('message', onVideoMsg);
+      container.innerHTML = `
+        <div class="yt-wrap">
+          <iframe
+            src="https://www.youtube.com/embed/live_stream?channel=${NASA_CH}&autoplay=1&mute=1&rel=0"
+            title="NASA TV Live"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
+      `;
+      // Channel live stream plays or shows NASA's "not live" UI — no timeout needed
+    }
+
+    // Phase 1: specific video embed
     container.innerHTML = `
       <div class="yt-wrap">
         <iframe
-          src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&enablejsapi=1"
+          src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&enablejsapi=1${origin}"
           title="NASA Artemis II Live Coverage"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           referrerpolicy="strict-origin-when-cross-origin"
@@ -121,22 +143,28 @@ function youtubePlayer(url, container) {
       </div>
     `;
 
+    let videoOk = false;
     // YouTube IFrame API sends error codes via postMessage.
     // 100 = video not found, 101/150 = embedding disabled, 153 = restricted.
-    function onMessage(e) {
+    // info may be a plain number or an object like {code: 153}.
+    function onVideoMsg(e) {
       if (!String(e.origin).includes('youtube.com')) return;
       try {
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data && data.event === 'onReady') { videoOk = true; }
         if (data && data.event === 'onError') {
-          const code = data.info;
-          if (code === 100 || code === 101 || code === 150 || code === 153) {
-            window.removeEventListener('message', onMessage);
-            renderFallback(videoId);
+          const code = (data.info != null && typeof data.info === 'object')
+            ? data.info.code : data.info;
+          if (code === 2 || code === 100 || code === 101 || code === 150 || code === 153) {
+            tryNASALive();
           }
         }
       } catch (_) {}
     }
-    window.addEventListener('message', onMessage);
+    window.addEventListener('message', onVideoMsg);
+
+    // 8 s timeout → try NASA channel live stream
+    setTimeout(() => { if (!videoOk) tryNASALive(); }, 8000);
   }
 
   // -- Entry point ----------------------------------------------------------
