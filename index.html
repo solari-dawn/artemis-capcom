@@ -96,6 +96,15 @@
     padding: 0;
     align-items: start;
   }
+  #right-panel {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+  }
+  #timeline-list {
+    flex: 1;
+    overflow-y: auto;
+  }
 
   .panel {
     background: var(--panel);
@@ -296,14 +305,29 @@
   .ticker-item a:hover { text-decoration: underline; }
   .ticker-sep { color: var(--accent); opacity: 0.6; }
 
+  /* ── Data-sources bar (bottom of centre panel) ── */
+  #datasources-bar {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+    padding: 7px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 18px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
   /* ── Footer ── */
   #site-footer {
     text-align: center;
-    padding: 10px 16px;
-    font-size: 12px;
+    padding: 5px 16px;
+    font-size: 11px;
     color: var(--dim);
     border-top: 1px solid var(--border);
-    margin-top: 8px;
+    margin-top: 4px;
   }
   #site-footer .eth-addr {
     display: inline-block;
@@ -318,10 +342,6 @@
     cursor: pointer;
   }
   #site-footer .eth-addr:hover { background: rgba(0,170,255,0.18); }
-    user-select: all;
-    cursor: pointer;
-  }
-  #site-footer .eth-addr:hover { background: rgba(0,170,255,0.18); }
 
   /* ── Responsive ── */
   @media (max-width: 900px) {
@@ -332,13 +352,22 @@
 
   /* ── Video / main panel tabs ── */
   #video-panel {
-    align-self: start;
+    align-self: stretch;
     padding: 0;
     overflow: hidden;
-    min-height: calc(100vh - 170px);
+    display: flex;
+    flex-direction: column;
+  }
+  #main-tabs {
+    flex-shrink: 0;
+  }
+  #main-tab-content {
+    flex-shrink: 0;
+  }
+  #datasources-bar {
+    margin-top: auto;
   }
   #grid > .panel:not(#video-panel) {
-    height: var(--center-panel-h, auto);
     overflow-y: auto;
   }
   #main-tabs {
@@ -376,7 +405,7 @@
     width: 5px; height: 5px; border-radius: 50%;
     background: currentColor;
   }
-  #main-tab-content { display: grid; }
+  #main-tab-content { display: grid; aspect-ratio: 16 / 9; }
   .tab-pane {
     grid-area: 1 / 1;
     display: flex;
@@ -555,7 +584,20 @@
         </div>
       </div>
     </div>
+    <!-- DATA SOURCES BAR: inside centre panel, below tabs -->
+    <div id="datasources-bar">
+      <span><span style="color:var(--accent);letter-spacing:1px;">ORBITAL</span>&nbsp;&nbsp;physics estimate &middot; 30&thinsp;s</span>
+      <span style="color:var(--border);">|</span>
+      <span><span style="color:var(--accent);letter-spacing:1px;">DSN</span>&nbsp;&nbsp;NASA Eyes XML &middot; 15&thinsp;s</span>
+      <span style="color:var(--border);">|</span>
+      <span><span style="color:var(--accent);letter-spacing:1px;">WEATHER</span>&nbsp;&nbsp;DONKI API &middot; 15&thinsp;min</span>
+      <span style="color:var(--border);">|</span>
+      <span><span style="color:var(--accent);letter-spacing:1px;">NEWS</span>&nbsp;&nbsp;NASA RSS &middot; 5&thinsp;min</span>
+      <span style="color:var(--border);">|</span>
+      <span>All times UTC</span>
+    </div>
   </div>
+
   <!-- RIGHT: Mission Imagery + Timeline -->
   <div class="panel" id="right-panel" style="overflow-y:auto;">
     <div class="panel-title"><span class="dot" style="background:var(--accent3)"></span> MISSION IMAGERY <span class="src-tag">NASA</span></div>
@@ -620,23 +662,8 @@
 
 <!-- FOOTER -->
 <footer id="site-footer">
-  <div style="max-width:1400px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;">
-    <div style="color:var(--dim);text-align:center;">
-      Public good project &mdash; no ads, no tracking, no monetization layer. &nbsp;
-      ETH donations welcome: <span class="eth-addr" title="Click to copy">solari-dawn.eth</span>
-    </div>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:center;">
-      <span><span style="color:var(--accent);letter-spacing:1px;">ORBITAL</span> &nbsp;physics estimate &middot; 30&thinsp;s</span>
-      <span style="color:var(--border);">|</span>
-      <span><span style="color:var(--accent);letter-spacing:1px;">DSN</span> &nbsp;NASA Eyes XML &middot; 15&thinsp;s</span>
-      <span style="color:var(--border);">|</span>
-      <span><span style="color:var(--accent);letter-spacing:1px;">WEATHER</span> &nbsp;DONKI API &middot; 15&thinsp;min</span>
-      <span style="color:var(--border);">|</span>
-      <span><span style="color:var(--accent);letter-spacing:1px;">NEWS</span> &nbsp;NASA RSS &middot; 5&thinsp;min</span>
-      <span style="color:var(--border);">|</span>
-      <span style="color:var(--dim);">All times UTC</span>
-    </div>
-  </div>
+  Public good project &mdash; no ads, no tracking, no monetization layer. &nbsp;
+  ETH donations welcome: <span class="eth-addr" title="Click to copy">solari-dawn.eth</span>
 </footer>
 
 <script>
@@ -1245,20 +1272,7 @@ function updatePhase() {
 setInterval(updatePhase, 10000);
 updatePhase();
 
-// ═══════════════════════════════════════════════
-// PANEL HEIGHT SYNC — anchor left/right to center
-// ═══════════════════════════════════════════════
-(function() {
-  const vp = document.getElementById('video-panel');
-  function syncH() {
-    document.documentElement.style.setProperty('--center-panel-h', vp.offsetHeight + 'px');
-  }
-  if (window.ResizeObserver) {
-    new ResizeObserver(syncH).observe(vp);
-  }
-  window.addEventListener('resize', syncH);
-  syncH();
-})();
+
 
 // ═══════════════════════════════════════════════
 // MAIN PANEL TABS
