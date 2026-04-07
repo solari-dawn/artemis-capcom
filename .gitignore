@@ -10,3 +10,5 @@ Thumbs.db
 # Misc
 *.log
 actions/
+fix_encoding.py
+images/uap.PNG

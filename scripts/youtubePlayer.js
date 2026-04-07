@@ -148,7 +148,7 @@ function youtubePlayer(url, container) {
     // 100 = video not found, 101/150 = embedding disabled, 153 = restricted.
     // info may be a plain number or an object like {code: 153}.
     function onVideoMsg(e) {
-      if (!String(e.origin).includes('youtube.com')) return;
+      if (!/^https:\/\/(?:[a-z]+\.)?youtube\.com$/.test(e.origin)) return;
       try {
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (data && data.event === 'onReady') { videoOk = true; }
