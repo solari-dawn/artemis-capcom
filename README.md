@@ -1,6 +1,6 @@
 # Artemis CAPCOM — Mission Control Dashboard
 
-A real-time, single-file mission control dashboard for NASA's Artemis II lunar flyby mission.  
+A real-time mission control dashboard for NASA's Artemis II lunar flyby mission.  
 Built with pure HTML, CSS, and vanilla JavaScript — no frameworks, no build tools, no tracking, no ads.
 
 > **Public good project.** If it's useful, ETH donations are welcome: `solari-dawn.eth`
