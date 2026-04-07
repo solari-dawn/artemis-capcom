@@ -40,7 +40,7 @@ Built with pure HTML, CSS, and vanilla JavaScript — no frameworks, no build to
 ## Usage
 
 ### View live
-Open **[solari-dawn.github.io/artemis2](https://solari-dawn.github.io/artemis2/)** in any modern browser.
+Open index.html in any modern browser.
 
 ### Run locally
 ```bash
