@@ -211,7 +211,7 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   /* ΓöÇΓöÇ Overlay panels ΓöÇΓöÇ */
-  #bottom-row { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+  #bottom-row { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 8px; }
 
   /* ΓöÇΓöÇ Source tags ΓöÇΓöÇ */
   .src-tag { font-size: 8px; color: var(--dim); float: right; }
@@ -364,20 +364,11 @@
     </div>
   </div>
 
-  <!-- CENTER: Orbit visualization -->
-  <div class="panel" id="orbit-panel">
-    <div class="panel-title"><span class="dot"></span> TRAJECTORY VISUALIZATION <span class="src-tag">COMPUTED ┬╖ JPL HORIZONS</span></div>
-    <canvas id="orbitCanvas"></canvas>
-    <div style="display:flex;gap:12px;margin-top:6px;font-size:9px;color:var(--dim);">
-      <span>ΓùÅ Earth</span><span style="color:#aaa">Γùë Moon</span><span style="color:var(--accent2)">Γû▓ Orion</span>
-      <span style="color:var(--accent3)">ΓÇö trajectory</span>
-      <span style="margin-left:auto" id="orbit-phase">Phase: ΓÇö</span>
-    </div>
-    <a class="arow-link" href="https://nasa.gov/missions/artemis/artemis-2/track-nasas-artemis-ii-mission-in-real-time/" target="_blank" rel="noopener">
-      Γû╢ OPEN NASA AROW ΓÇö REAL-TIME ORBIT WEBSITE
-    </a>
+  <!-- CENTER: Live Video -->
+  <div class="panel" id="video-panel">
+    <div class="panel-title"><span class="dot" style="background:var(--danger)"></span> NASA LIVE BROADCAST <span class="src-tag">YOUTUBE</span></div>
+    <div id="yt-player-container"></div>
   </div>
-
   <!-- RIGHT: Space Weather + Crew -->
   <div class="panel">
     <div class="panel-title"><span class="dot" style="background:var(--warn)"></span> SPACE WEATHER <span class="src-tag">NASA·DONKI</span></div>
@@ -430,6 +421,19 @@
       <div id="timeline-list"><div class="loading">Loading timeline...</div></div>
     </div>
 
+    <!-- TRAJECTORY VISUALIZATION (moved) -->
+    <div class="panel" id="orbit-panel">
+      <div class="panel-title"><span class="dot"></span> TRAJECTORY VISUALIZATION <span class="src-tag">COMPUTED &middot; JPL HORIZONS</span></div>
+      <canvas id="orbitCanvas"></canvas>
+      <div style="display:flex;gap:12px;margin-top:6px;font-size:9px;color:var(--dim);">
+        <span>&#9679; Earth</span><span style="color:#aaa">&#9679; Moon</span><span style="color:var(--accent2)">&#9654; Orion</span>
+        <span style="color:var(--accent3)">&mdash; trajectory</span>
+        <span style="margin-left:auto" id="orbit-phase">Phase: &mdash;</span>
+      </div>
+      <a class="arow-link" href="https://nasa.gov/missions/artemis/artemis-2/track-nasas-artemis-ii-mission-in-real-time/" target="_blank" rel="noopener">
+        &#x2B21; OPEN NASA AROW &mdash; REAL-TIME ORBIT WEBSITE
+      </a>
+    </div>
     <!-- Mission Updates + Live DSN Contact Log -->
     <div class="panel" style="overflow-y:auto;max-height:320px;">
       <div class="panel-title"><span class="dot" style="background:var(--accent3)"></span> DEEP SPACE NETWORK <span class="src-tag">DSN&middot;NOW</span></div>
